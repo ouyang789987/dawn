@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="weaver" default="weaving" basedir=".">
+    <property name="bindir" value="./bin" />
+    <property name="libdir" value="./libs" />
+    
+	<path id="clspatth">
+		<pathelement location="${bindir}" />
+		<fileset dir="${libdir}">
+			<include name="**/*.jar" />
+		</fileset>
+		<pathelement path="${java.class.path}" />
+	</path>
+	
+	<target name="weaving">
+<!-- 		<sleep seconds="2" /> -->
+		<java classname="kilim.tools.Weaver" fork="yes">
+			<classpath refid="clspatth" />
+	
+			<arg value="-d" />
+			<arg value="${bindir}" />
+			<arg line="${bindir}" />
+		</java>
+	</target>
+</project>
