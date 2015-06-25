@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 
@@ -20,7 +21,8 @@ import zhmt.dawn.util.UnsafeUtil;
 public abstract class ScalableBuf<BLOCK> {
 	protected BlockFactory<BLOCK> blockFactory;
 	protected long blocksize = 0;
-
+	protected boolean isBigEndian = true;
+	protected boolean isNativeByteOrder = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
 	/**
 	 * The two variables below are used for maximu using of bitwise opertations.
 	 */
@@ -57,6 +59,11 @@ public abstract class ScalableBuf<BLOCK> {
 		wi = 0;
 		ri = 0;
 		this.blockFactory = blockFactory;
+	}
+	
+	public void setByteOrder(ByteOrder order){
+		isBigEndian = (order==ByteOrder.BIG_ENDIAN);
+		isNativeByteOrder = (ByteOrder.nativeOrder() == order);
 	}
 
 	/**
@@ -269,7 +276,7 @@ public abstract class ScalableBuf<BLOCK> {
 		limitpos = ((limitpos >>> blocksizesqrt) - rb) << blocksizesqrt;
 		ri = ri & blocksizemask;
 		wi = ri + distance;
-//		System.out.println("compact...");
+		//		System.out.println("compact...");
 	}
 
 	public void wbyte(int data) {
@@ -595,7 +602,8 @@ public abstract class ScalableBuf<BLOCK> {
 		return ret;
 	}
 
-	protected static final int[] intShifts = { 24, 16, 8, 0 };
+	protected static final int[] bigEndianIntShifts = { 24, 16, 8, 0 };
+	protected static final int[] littleEndianIntShifts = { 0, 8, 16, 24 };
 
 	protected void setFloat(int dlen, long wi, float data) {
 		long wi_ = wi;
@@ -627,7 +635,10 @@ public abstract class ScalableBuf<BLOCK> {
 		return ret;
 	}
 
-	protected static final int[] longShifts = { 56, 48, 40, 32, 24, 16, 8, 0 };
+	protected static final int[] bigEndianLongShifts = { 56, 48, 40, 32, 24,
+			16, 8, 0 };
+	protected static final int[] littleEndianLongShifts = { 0, 8, 16, 24, 32,
+			40, 48, 56 };
 
 	protected void setDouble(int dlen, long wi, double data) {
 		long wi_ = wi;
@@ -731,10 +742,18 @@ public abstract class ScalableBuf<BLOCK> {
 	}
 
 	private void setSplitedShort_(long dlen, long wb, long wbi, short data) {
-		setByte_(wb, wbi, (byte) (data >>> 8));
-		wb++;
-		wbi = 0;
-		setByte_(wb, wbi, (byte) data);
+		if (isBigEndian) {
+			setByte_(wb, wbi, (byte) (data >>> 8));
+			wb++;
+			wbi = 0;
+			setByte_(wb, wbi, (byte) data);
+		} else {
+			setByte_(wb, wbi, (byte) (data));
+			wb++;
+			wbi = 0;
+			setByte_(wb, wbi, (byte) (data >>> 8));
+		}
+
 	}
 
 	/**
@@ -763,11 +782,19 @@ public abstract class ScalableBuf<BLOCK> {
 	}
 
 	private short getSplitedShort_(long dlen, long rb, long rbi) {
-		short ret = (short) ((getByte_(rb, rbi) & 0xFF) << 8);
-		rb++;
-		rbi = 0;
-		ret |= (getByte_(rb, rbi) & 0xFF);
-		return ret;
+		if (isBigEndian) {
+			short ret = (short) ((getByte_(rb, rbi) & 0xFF) << 8);
+			rb++;
+			rbi = 0;
+			ret |= (getByte_(rb, rbi) & 0xFF);
+			return ret;
+		} else {
+			short ret = (short) ((getByte_(rb, rbi) & 0xFF));
+			rb++;
+			rbi = 0;
+			ret |= ((getByte_(rb, rbi) & 0xFF) << 8);
+			return ret;
+		}
 	}
 
 	protected abstract void setIntToSingleBlock(long wb, long wbi, int data);
@@ -775,12 +802,19 @@ public abstract class ScalableBuf<BLOCK> {
 	protected abstract int getIntFromSingleBlock(long rb, long rbi);
 
 	protected void setInt_(long dlen, long wb, long wbi, int data) {
+
 		long curLeft = blocksize - wbi;
 		if (curLeft >= dlen) {
 			setIntToSingleBlock(wb, wbi, data);
 		} else {
+			int[] arr = null;
+			if (isBigEndian) {
+				arr = bigEndianIntShifts;
+			} else {
+				arr = littleEndianIntShifts;
+			}
 			for (int i = 0; i < dlen; i++) {
-				setByte_(wb, wbi, (byte) (data >>> intShifts[i]));
+				setByte_(wb, wbi, (byte) (data >>> arr[i]));
 				wbi++;
 				if (wbi >= blocksize) {
 					wb++;
@@ -794,9 +828,15 @@ public abstract class ScalableBuf<BLOCK> {
 		if (blocksize - rbi >= dlen) {
 			return getIntFromSingleBlock(rb, rbi);
 		} else {
+			int[] arr = null;
+			if (isBigEndian) {
+				arr = bigEndianIntShifts;
+			} else {
+				arr = littleEndianIntShifts;
+			}
 			int ret = 0;
 			for (int i = 0; i < dlen; i++) {
-				ret |= ((getByte_(rb, rbi) & 0xFF) << intShifts[i]);
+				ret |= ((getByte_(rb, rbi) & 0xFF) << arr[i]);
 				rbi++;
 				if (rbi >= blocksize) {
 					rb++;
@@ -815,8 +855,14 @@ public abstract class ScalableBuf<BLOCK> {
 		if (blocksize - wbi > dlen) {
 			setLongToSingleBlock(wb, wbi, data);
 		} else {
+			int arr[];
+			if (isBigEndian) {
+				arr = bigEndianLongShifts;
+			} else {
+				arr = littleEndianLongShifts;
+			}
 			for (int i = 0; i < dlen; i++) {
-				setByte_(wb, wbi, (byte) (data >>> longShifts[i]));
+				setByte_(wb, wbi, (byte) (data >>> arr[i]));
 				wbi++;
 				if (wbi >= blocksize) {
 					wb++;
@@ -830,9 +876,15 @@ public abstract class ScalableBuf<BLOCK> {
 		if (blocksize - rbi > dlen) {
 			return getLongFromSingleBlock(rb, rbi);
 		} else {
+			int arr[];
+			if (isBigEndian) {
+				arr = bigEndianLongShifts;
+			} else {
+				arr = littleEndianLongShifts;
+			}
 			long ret = 0;
 			for (int i = 0; i < dlen; i++) {
-				ret |= ((getByte_(rb, rbi) & 0xFFL) << longShifts[i]);
+				ret |= ((getByte_(rb, rbi) & 0xFFL) << arr[i]);
 				rbi++;
 				if (rbi >= blocksize) {
 					rb++;

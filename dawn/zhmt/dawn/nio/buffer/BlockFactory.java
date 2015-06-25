@@ -109,7 +109,9 @@ public interface BlockFactory<BLOCK> {
 
 		@Override
 		ByteBuffer create() {
-			return ByteBuffer.allocateDirect((int) blocksize);
+			ByteBuffer ret = ByteBuffer.allocateDirect((int) blocksize);
+			ret.limit(ret.capacity());
+			return ret;
 		}
 	}
 

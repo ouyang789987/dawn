@@ -4,10 +4,12 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 
 import org.junit.Test;
 
+import zhmt.dawn.util.UnsafeUtil;
 
 public class ScalableDirectBufTest {
 	@Test
@@ -104,6 +106,163 @@ public class ScalableDirectBufTest {
 			assertTrue(buf2.rdouble() == Double.MIN_VALUE);
 			assertTrue(buf2.rutf(str.length() * 2).equals(str));
 		}
+	}
+	
+	@Test
+	public void testShortByteOrder() {
+		{
+			ScalableBuf buf = new ScalableDirectBuf(
+					new BlockFactory.CachedDirectFactory(1));
+			buf.wshort((short)1);
+			int i = 0;
+			assertTrue(buf.gbyte(i++) == 0);
+			assertTrue(buf.gbyte(i++) == 1);
+		}
+		{
+			ScalableBuf buf = new ScalableDirectBuf(
+					new BlockFactory.CachedDirectFactory(10));
+			buf.wshort((short)1);
+			int i = 0;
+			assertTrue(buf.gbyte(i++) == 0);
+			assertTrue(buf.gbyte(i++) == 1);
+		}
+		{
+			ScalableBuf buf = new ScalableDirectBuf(
+					new BlockFactory.CachedDirectFactory(1));
+			buf.setByteOrder(ByteOrder.LITTLE_ENDIAN);
+			buf.wshort((short)1);
+			int i = 0;
+			assertTrue(buf.gbyte(i++) == 1);
+			assertTrue(buf.gbyte(i++) == 0);
+		}
+		{
+			ScalableBuf buf = new ScalableDirectBuf(
+					new BlockFactory.CachedDirectFactory(10));
+			buf.setByteOrder(ByteOrder.LITTLE_ENDIAN);
+			buf.wshort((short)1);
+			int i = 0;
+			assertTrue(buf.gbyte(i++) == 1);
+			assertTrue(buf.gbyte(i++) == 0);
+		}
+	}
+
+	@Test
+	public void testIntByteOrder() {
+		{
+			ScalableBuf buf = new ScalableDirectBuf(
+					new BlockFactory.CachedDirectFactory(1));
+			buf.wint(0x01020304);
+			int i = 0;
+			assertTrue(buf.gbyte(i++) == 1);
+			assertTrue(buf.gbyte(i++) == 2);
+			assertTrue(buf.gbyte(i++) == 3);
+			assertTrue(buf.gbyte(i++) == 4);
+		}
+		{
+			ScalableBuf buf = new ScalableDirectBuf(
+					new BlockFactory.CachedDirectFactory(10));
+			buf.wint(0x01020304);
+			int i = 0;
+			assertTrue(buf.gbyte(i++) == 1);
+			assertTrue(buf.gbyte(i++) == 2);
+			assertTrue(buf.gbyte(i++) == 3);
+			assertTrue(buf.gbyte(i++) == 4);
+		}
+		{
+			ScalableBuf buf = new ScalableDirectBuf(
+					new BlockFactory.CachedDirectFactory(1));
+			buf.setByteOrder(ByteOrder.LITTLE_ENDIAN);
+			buf.wint(0x01020304);
+			int i = 0;
+			assertTrue(buf.gbyte(i++) == 4);
+			assertTrue(buf.gbyte(i++) == 3);
+			assertTrue(buf.gbyte(i++) == 2);
+			assertTrue(buf.gbyte(i++) == 1);
+		}
+		{
+			ScalableBuf buf = new ScalableDirectBuf(
+					new BlockFactory.CachedDirectFactory(10));
+			buf.setByteOrder(ByteOrder.LITTLE_ENDIAN);
+			buf.wint(0x01020304);
+			int i = 0;
+			assertTrue(buf.gbyte(i++) == 4);
+			assertTrue(buf.gbyte(i++) == 3);
+			assertTrue(buf.gbyte(i++) == 2);
+			assertTrue(buf.gbyte(i++) == 1);
+		}
+	}
+	
+	@Test
+	public void testLongByteOrder() {
+		long data = 0x0102030405060708L;
+		{
+			ScalableBuf buf = new ScalableDirectBuf(
+					new BlockFactory.CachedDirectFactory(1));
+			buf.wlong(data);
+			int i = 0;
+			assertTrue(buf.gbyte(i++) == 1);
+			assertTrue(buf.gbyte(i++) == 2);
+			assertTrue(buf.gbyte(i++) == 3);
+			assertTrue(buf.gbyte(i++) == 4);
+			assertTrue(buf.gbyte(i++) == 5);
+			assertTrue(buf.gbyte(i++) == 6);
+			assertTrue(buf.gbyte(i++) == 7);
+			assertTrue(buf.gbyte(i++) == 8);
+		}
+		{
+			ScalableBuf buf = new ScalableDirectBuf(
+					new BlockFactory.CachedDirectFactory(10));
+			buf.wlong(data);
+			int i = 0;
+			assertTrue(buf.gbyte(i++) == 1);
+			assertTrue(buf.gbyte(i++) == 2);
+			assertTrue(buf.gbyte(i++) == 3);
+			assertTrue(buf.gbyte(i++) == 4);
+			assertTrue(buf.gbyte(i++) == 5);
+			assertTrue(buf.gbyte(i++) == 6);
+			assertTrue(buf.gbyte(i++) == 7);
+			assertTrue(buf.gbyte(i++) == 8);
+		}
+		{
+			ScalableBuf buf = new ScalableDirectBuf(
+					new BlockFactory.CachedDirectFactory(1));
+			buf.setByteOrder(ByteOrder.LITTLE_ENDIAN);
+			buf.wlong(data);
+			int i = 0;
+			assertTrue(buf.gbyte(i++) == 8);
+			assertTrue(buf.gbyte(i++) == 7);
+			assertTrue(buf.gbyte(i++) == 6);
+			assertTrue(buf.gbyte(i++) == 5);
+			assertTrue(buf.gbyte(i++) == 4);
+			assertTrue(buf.gbyte(i++) == 3);
+			assertTrue(buf.gbyte(i++) == 2);
+			assertTrue(buf.gbyte(i++) == 1);
+		}
+		{
+			ScalableBuf buf = new ScalableDirectBuf(
+					new BlockFactory.CachedDirectFactory(10));
+			buf.setByteOrder(ByteOrder.LITTLE_ENDIAN);
+			buf.wlong(data);
+			int i = 0;
+			assertTrue(buf.gbyte(i++) == 8);
+			assertTrue(buf.gbyte(i++) == 7);
+			assertTrue(buf.gbyte(i++) == 6);
+			assertTrue(buf.gbyte(i++) == 5);
+			assertTrue(buf.gbyte(i++) == 4);
+			assertTrue(buf.gbyte(i++) == 3);
+			assertTrue(buf.gbyte(i++) == 2);
+			assertTrue(buf.gbyte(i++) == 1);
+		}
+	}
+	
+	@Test
+	public void testShortBound(){
+		ScalableBuf buf = new ScalableDirectBuf(
+				new BlockFactory.CachedDirectFactory(10));
+		buf.wshort(Short.MAX_VALUE);
+		System.out.println(Short.MAX_VALUE);
+		assertTrue(buf.rshort() == Short.MAX_VALUE);
+		
 	}
 
 	@Test

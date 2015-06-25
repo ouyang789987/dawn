@@ -4,6 +4,13 @@ import java.lang.reflect.Field;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
+import zhmt.dawn.util.UnsafeUtil;
+
+/**
+ * Bigendian
+ * 
+ * @author zhmt
+ */
 public class ScalableDirectBuf extends ScalableBuf<ByteBuffer> {
 	long[] bases = new long[50];
 
@@ -157,32 +164,53 @@ public class ScalableDirectBuf extends ScalableBuf<ByteBuffer> {
 
 	@Override
 	protected void setShortToSingleBlock(long wb, long wbi, short data) {
+		if (!isNativeByteOrder) {
+			data = Short.reverseBytes(data);
+		}
 		unsafe.putShort(bases[(int) wb] + wbi, data);
 	}
 
 	@Override
 	protected short getShortFromSingleBlock(long rb, long rbi) {
-		return unsafe.getShort(bases[(int) rb] + rbi);
+		short data = unsafe.getShort(bases[(int) rb] + rbi);
+		if (!isNativeByteOrder) {
+			data = Short.reverseBytes(data);
+		}
+		return data;
 	}
 
 	@Override
 	protected void setIntToSingleBlock(long wb, long wbi, int data) {
+		if (!isNativeByteOrder) {
+			data = Integer.reverseBytes(data);
+		}
 		unsafe.putInt(bases[(int) wb] + wbi, data);
 	}
 
 	@Override
 	protected int getIntFromSingleBlock(long rb, long rbi) {
-		return unsafe.getInt(bases[(int) rb] + rbi);
+		int data = unsafe.getInt(bases[(int) rb] + rbi);
+		if (!isNativeByteOrder) {
+			data = Integer.reverseBytes(data);
+		}
+		return data;
 	}
 
 	@Override
 	protected void setLongToSingleBlock(long wb, long wbi, long data) {
+		if (!isNativeByteOrder) {
+			data = Long.reverseBytes(data);
+		}
 		unsafe.putLong(bases[(int) wb] + wbi, data);
 	}
 
 	@Override
 	protected long getLongFromSingleBlock(long rb, long rbi) {
-		return unsafe.getLong(bases[(int) rb] + rbi);
+		long data = unsafe.getLong(bases[(int) rb] + rbi);
+		if (!isNativeByteOrder) {
+			data = Long.reverseBytes(data);
+		}
+		return data;
 	}
 
 	public static void main(String[] args) {
@@ -227,4 +255,5 @@ public class ScalableDirectBuf extends ScalableBuf<ByteBuffer> {
 			bufs[i] = null;
 		}
 	}
+
 }
