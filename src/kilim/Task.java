@@ -206,7 +206,7 @@ public abstract class Task implements EventSubscriber, java.lang.Comparable,
 	 * call in the bytecode from invokestateic Task.getCurrentTask to load fiber
 	 * getfield task
 	 */
-	public static Task getCurrentTask() throws Pausable {
+	public static Task getCurrentTask(){
 		Task ret = currentTask.get();
 		if (ret == null)
 			throw new NullPointerException(
