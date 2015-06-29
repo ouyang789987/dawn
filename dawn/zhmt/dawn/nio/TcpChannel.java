@@ -15,13 +15,16 @@ import zhmt.dawn.util.PooledObj;
 import zhmt.dawn.util.TlsObjPool;
 
 public class TcpChannel implements NioEventHandler {
+	enum LinkState{
+		created,connected,closed
+	}
 	protected SocketChannel sc;
 	protected SelectionKey key;
 
 	private FiberReentrantLock readLock = new FiberReentrantLock();
 	private FiberReentrantLock writeLock = new FiberReentrantLock();
 	
-	private boolean closed = false;
+	private LinkState linkState = LinkState.created;
 
 	public TcpChannel() {
 		ctxPool = IoCtx.tlsPool.getPool();
@@ -33,12 +36,12 @@ public class TcpChannel implements NioEventHandler {
 	}
 
 	public void close() {
-		closed = true;
+		linkState = LinkState.closed;
 		onConnectionBroken();
 	}
 	
 	public boolean isClosed() {
-		return closed;
+		return linkState==LinkState.closed;
 	}
 
 	@Override
@@ -189,7 +192,9 @@ public class TcpChannel implements NioEventHandler {
 	}
 
 	public void checkConnected(long timeout) throws Pausable {
-
+		if(isClosed()){
+			throw new RuntimeException("ClosedTcpChannel.");
+		}
 	}
 
 	protected void onConnectionBroken() {

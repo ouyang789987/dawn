@@ -16,7 +16,6 @@ public class TcpClientChannel extends TcpChannel {
 	private InetSocketAddress addr;
 	private boolean autoReconnect = true;
 	private long reconnectSleep = 2000;
-	private boolean closed = false;
 
 	private boolean connecting = false;
 	private FiberSwitch channelState = new FiberSwitch(false);
@@ -58,6 +57,10 @@ public class TcpClientChannel extends TcpChannel {
 		if (autoReconnect)
 			tryReconnect(reconnectSleep);
 	}
+	
+	public void disconnectAndReconnect() {
+		super.close();
+	}
 
 	private void tryReconnect(long delay) {
 		System.out.println("connecting1"+connecting);
@@ -73,6 +76,7 @@ public class TcpClientChannel extends TcpChannel {
 
 	@Override
 	public void checkConnected(long timeout) throws Pausable {
+		super.checkConnected(timeout);
 		if (timeout > 0)
 			channelState.waitForTurningOn(timeout);
 		else
@@ -156,15 +160,10 @@ public class TcpClientChannel extends TcpChannel {
 
 	@Override
 	public void close() {
-		closed = true;
 		this.autoReconnect = false;
 		super.close();
 	}
 	
-	public boolean isClosed() {
-		return closed;
-	}
-
 	@Override
 	public void onNioEvent() {
 		super.onNioEvent();
