@@ -15,16 +15,19 @@ import zhmt.dawn.util.PooledObj;
 import zhmt.dawn.util.TlsObjPool;
 
 public class TcpChannel implements NioEventHandler {
-	enum LinkState{
-		created,connected,closed
+	enum LinkState {
+		created, connected, closed
 	}
+
 	protected SocketChannel sc;
 	protected SelectionKey key;
 
 	private FiberReentrantLock readLock = new FiberReentrantLock();
 	private FiberReentrantLock writeLock = new FiberReentrantLock();
-	
+
 	private LinkState linkState = LinkState.created;
+
+	private boolean hasGotEof = false;
 
 	public TcpChannel() {
 		ctxPool = IoCtx.tlsPool.getPool();
@@ -39,9 +42,9 @@ public class TcpChannel implements NioEventHandler {
 		linkState = LinkState.closed;
 		onConnectionBroken();
 	}
-	
+
 	public boolean isClosed() {
-		return linkState==LinkState.closed;
+		return linkState == LinkState.closed;
 	}
 
 	@Override
@@ -61,17 +64,19 @@ public class TcpChannel implements NioEventHandler {
 
 	private final FiberSignal readableSignal = new FiberSignal();
 	private final FiberSignal writableSignal = new FiberSignal();
-	private ObjectPool<IoCtx>  ctxPool;
+	private ObjectPool<IoCtx> ctxPool;
 
-	private static class IoCtx implements PooledObj{
+	private static class IoCtx implements PooledObj {
 		private boolean eof = false;
 		private IOException ioException = null;
+
 		@Override
 		public void reset() {
 			eof = false;
 			ioException = null;
 		}
-		private static final TlsObjPool<IoCtx> tlsPool = new TlsObjPool<IoCtx>(){
+
+		private static final TlsObjPool<IoCtx> tlsPool = new TlsObjPool<IoCtx>() {
 			@Override
 			protected IoCtx create() {
 				return new IoCtx();
@@ -92,22 +97,22 @@ public class TcpChannel implements NioEventHandler {
 		try {
 			checkConnected(-1);
 			//try read syncly
-//			int n = tryToReadMaxSlilently(buf, ctx);  //TODO remove it?
-//			if (n > 0)
-//				return n;
-//			tryToThrowIoException(ctx);
+			//			int n = tryToReadMaxSlilently(buf, ctx);  //TODO remove it?
+			//			if (n > 0)
+			//				return n;
+			//			tryToThrowIoException(ctx);
 
 			//Got nothing, do async read;
 			key.interestOps(key.interestOps() | key.OP_READ);
-//			System.out.println("add OP_READ  ");
+			//			System.out.println("add OP_READ  ");
 			readableSignal.waitForSignal();
-//			System.out.println("reading...");
+			//			System.out.println("reading...");
 			int count = tryToReadMaxSlilently(buf, ctx);
 			if (count > 0) {
 				return count;
 			}
 			tryToThrowIoException(ctx);
-			return 0;
+			return count;
 		} finally {
 			ctxPool.returnOne(ctx);
 			readLock.release();
@@ -130,9 +135,9 @@ public class TcpChannel implements NioEventHandler {
 			//has remaining, do async read;
 			while (buf.readable() > 0) {
 				key.interestOps(key.interestOps() | key.OP_WRITE);
-//				System.out.println("add OP_WRITE");
+				//				System.out.println("add OP_WRITE");
 				writableSignal.waitForSignal();
-//				System.out.println("writing...");
+				//				System.out.println("writing...");
 				tryToWriteMaxSilently(buf, ctx);
 				tryToThrowIoException(ctx);
 			}
@@ -147,21 +152,24 @@ public class TcpChannel implements NioEventHandler {
 			throw new RuntimeException(ctx.ioException);
 		}
 		if (ctx.eof) {
-			throw new RuntimeException("EOF");
+			if (hasGotEof)
+				throw new RuntimeException("EOF");
+			else
+				hasGotEof = true;
 		}
 	}
 
 	private int tryToReadMaxSlilently(ScalableBuf buf, IoCtx ctx) {
 		long onceCount = 0;
-			try {
-				onceCount = buf.readFrom(sc);
-			} catch (IOException e) {
-				ctx.ioException = e;
-				onConnectionBroken();
-			}
-			if (onceCount < 0) {
-				ctx.eof = true;
-			}
+		try {
+			onceCount = buf.readFrom(sc);
+		} catch (IOException e) {
+			ctx.ioException = e;
+			onConnectionBroken();
+		}
+		if (onceCount < 0) {
+			ctx.eof = true;
+		}
 
 		return (int) onceCount;
 	}
@@ -179,7 +187,7 @@ public class TcpChannel implements NioEventHandler {
 
 	@Override
 	public void onNioEvent() {
-//		System.out.println("onNioEvent");
+		//		System.out.println("onNioEvent");
 		if ((key.readyOps() & SelectionKey.OP_READ) != 0) {
 			key.interestOps(key.interestOps() & (~key.OP_READ));
 			this.readableSignal.signalFirst();
@@ -192,7 +200,7 @@ public class TcpChannel implements NioEventHandler {
 	}
 
 	public void checkConnected(long timeout) throws Pausable {
-		if(isClosed()){
+		if (isClosed()) {
 			throw new RuntimeException("ClosedTcpChannel.");
 		}
 	}

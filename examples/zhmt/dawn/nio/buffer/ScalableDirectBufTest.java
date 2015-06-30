@@ -6,15 +6,18 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
 
 import org.junit.Test;
 
 import zhmt.dawn.util.UnsafeUtil;
 
 public class ScalableDirectBufTest {
+	private static Charset cs = Charset.forName("utf8");
 	@Test
 	public void testWriteToChannel() throws IOException {
 		String str = "abccc电风扇";
+		int strlen = str.getBytes(cs).length;
 		for (int i = 0; i < 1024; i++) {
 			ScalableBuf buf = new ScalableDirectBuf(
 					new BlockFactory.CachedDirectFactory(i + 1));
@@ -31,7 +34,7 @@ public class ScalableDirectBufTest {
 			buf.wlong(Long.MIN_VALUE);
 			buf.wdouble(Double.MAX_VALUE);
 			buf.wdouble(Double.MIN_VALUE);
-			buf.wutf(str);
+			buf.wstr(str,cs);
 
 			RandomAccessFile aFile = new RandomAccessFile("a.txt", "rw");
 			FileChannel inChannel = aFile.getChannel();
@@ -63,13 +66,14 @@ public class ScalableDirectBufTest {
 			assertTrue(buf2.rlong() == Long.MIN_VALUE);
 			assertTrue(buf2.rdouble() == Double.MAX_VALUE);
 			assertTrue(buf2.rdouble() == Double.MIN_VALUE);
-			assertTrue(buf2.rutf(str.length() * 2).equals(str));
+			assertTrue(buf2.rstr(strlen,cs).equals(str));
 		}
 	}
 
 	@Test
 	public void testWriteToBuf() {
 		String str = "abccc电风扇";
+		int strlen = str.getBytes(cs).length;
 		for (int i = 0; i < 1024; i++) {
 			ScalableBuf buf = new ScalableDirectBuf(
 					new BlockFactory.CachedDirectFactory(i + 1));
@@ -86,7 +90,7 @@ public class ScalableDirectBufTest {
 			buf.wlong(Long.MIN_VALUE);
 			buf.wdouble(Double.MAX_VALUE);
 			buf.wdouble(Double.MIN_VALUE);
-			buf.wutf(str);
+			buf.wstr(str,cs);
 
 			ScalableBuf buf2 = new ScalableDirectBuf(
 					new BlockFactory.CachedDirectFactory(i + 1));
@@ -104,7 +108,7 @@ public class ScalableDirectBufTest {
 			assertTrue(buf2.rlong() == Long.MIN_VALUE);
 			assertTrue(buf2.rdouble() == Double.MAX_VALUE);
 			assertTrue(buf2.rdouble() == Double.MIN_VALUE);
-			assertTrue(buf2.rutf(str.length() * 2).equals(str));
+			assertTrue(buf2.rstr(strlen,cs).equals(str));
 		}
 	}
 	
@@ -268,6 +272,7 @@ public class ScalableDirectBufTest {
 	@Test
 	public void testFormat() {
 		String str = "abccc电风扇";
+		int strlen = str.getBytes(cs).length;
 		for (int i = 0; i < 1024; i++) {
 
 			ScalableBuf buf = new ScalableDirectBuf(
@@ -285,7 +290,7 @@ public class ScalableDirectBufTest {
 			buf.wlong(Long.MIN_VALUE);
 			buf.wdouble(Double.MAX_VALUE);
 			buf.wdouble(Double.MIN_VALUE);
-			buf.wutf(str);
+			buf.wstr(str,cs);
 
 			assertTrue(buf.rbyte() == Byte.MAX_VALUE);
 			assertTrue(buf.rbyte() == Byte.MIN_VALUE);
@@ -299,7 +304,7 @@ public class ScalableDirectBufTest {
 			assertTrue(buf.rlong() == Long.MIN_VALUE);
 			assertTrue(buf.rdouble() == Double.MAX_VALUE);
 			assertTrue(buf.rdouble() == Double.MIN_VALUE);
-			assertTrue(buf.rutf(str.length() * 2).equals(str));
+			assertTrue(buf.rstr(strlen,cs).equals(str));
 
 			buf.compact();
 
@@ -315,7 +320,7 @@ public class ScalableDirectBufTest {
 			buf.wlong(Long.MIN_VALUE);
 			buf.wdouble(Double.MAX_VALUE);
 			buf.wdouble(Double.MIN_VALUE);
-			buf.wutf(str);
+			buf.wstr(str,cs);
 
 			assertTrue(buf.rbyte() == Byte.MAX_VALUE);
 			assertTrue(buf.rbyte() == Byte.MIN_VALUE);
@@ -329,7 +334,7 @@ public class ScalableDirectBufTest {
 			assertTrue(buf.rlong() == Long.MIN_VALUE);
 			assertTrue(buf.rdouble() == Double.MAX_VALUE);
 			assertTrue(buf.rdouble() == Double.MIN_VALUE);
-			assertTrue(buf.rutf(str.length() * 2).equals(str));
+			assertTrue(buf.rstr(strlen,cs).equals(str));
 		}
 	}
 

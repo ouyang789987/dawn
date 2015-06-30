@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.charset.Charset;
 
 import zhmt.dawn.util.UnsafeUtil;
 
@@ -443,31 +444,36 @@ public abstract class ScalableBuf<BLOCK> {
 		return ret;
 	}
 
-	public void wutf(String str) {
-		int strlen = str.length();
-		int bytelen = strlen << 1;
+	public int wstr(String str,Charset cs) {
+		byte[] bytes = str.getBytes(cs);
+		int bytelen = bytes.length;
 		checkWrite(bytelen);
-		setUtf(bytelen, wi, str);
+		setBytes(bytelen, wi, bytes, 0);
 		wi += bytelen;
+		return bytelen;
 	}
 
-	public String rutf(int n) {
-		checkRead(n);
-		String ret = getUtf(n, ri);
-		ri += n;
+	public String rstr(int len,Charset cs) {
+		checkRead(len);
+		byte[] bytes = new byte[len];
+		getBytes(len, ri, bytes, 0);
+		String ret = new String(bytes,cs);
+		ri += len;
 		return ret;
 	}
 
-	public void sutf(long wi, String data) {
-		int strlen = data.length();
-		int bytelen = strlen << 1;
+	public void sstr(long wi, String data,Charset cs) {
+		byte[] bytes = data.getBytes(cs);
+		int bytelen = bytes.length;
 		checkSet(wi, bytelen);
-		setUtf(bytelen, wi, data);
+		setBytes(bytelen, wi, bytes, 0);
 	}
 
-	public String gutf(long ri, int len) {
+	public String gstr(long ri, int len,Charset cs) {
 		checkGet(ri, len);
-		String ret = getUtf(len, ri);
+		byte[] bytes = new byte[len];
+		getBytes(len, ri, bytes, 0);
+		String ret = new String(bytes,cs);
 		return ret;
 	}
 
@@ -655,32 +661,7 @@ public abstract class ScalableBuf<BLOCK> {
 		return ret;
 	}
 
-	private void setUtf(int bytelen, long wi, String str) {
-		long wi_ = wi;
-		long remains = bytelen;
-
-		Object internal = unsafe.getObject(str, stringValueOffset);
-		long left = 0;
-		long wb = wi_ >>> blocksizesqrt;
-		long wbi = wi_ & blocksizemask;
-		while (remains > 0) {
-			left = blocksize - wbi;
-			if (left > remains) {
-				copyMemoryToSingleBlock(internal, unsafe.ARRAY_CHAR_BASE_OFFSET
-						+ (bytelen - remains), wb, wbi, remains);
-				remains -= remains;
-				wbi += remains;
-			} else {
-				copyMemoryToSingleBlock(internal, unsafe.ARRAY_CHAR_BASE_OFFSET
-						+ (bytelen - remains), wb, wbi, left);
-				remains -= left;
-				wb++;
-				wbi = 0;
-			}
-		}
-	}
-
-	private String getUtf(int bytelen, long ri) {
+	private String getUtf(int bytelen, long ri,Charset cs) {
 		int strlen = bytelen >>> 1;
 
 		String ret = new String();
