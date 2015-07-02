@@ -15,11 +15,11 @@ public class CycleArrayQueue<T> {
 	private int size;
 	private SimpleLinkedList<T> ultraQ;
 	
-	public static int count = 0;
+//	public static int count = 0;
 
 	public CycleArrayQueue(int size) {
-		count++;
-		System.out.println(count);
+//		count++;
+//		System.out.println(count);
 		sink = new Object[size];
 		head = 0;
 		tail = 0;
