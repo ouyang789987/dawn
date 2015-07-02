@@ -290,7 +290,6 @@ public abstract class Task implements EventSubscriber, java.lang.Comparable,
 			throws Pausable, IllegalAccessException, IllegalArgumentException,
 			InvocationTargetException {
 		Fiber f = getCurrentTask().fiber;
-		System.out.println("==" + f);
 		Object[] fargs;
 		if (f.pc == 0) {
 			mthd = getWovenMethod(mthd);

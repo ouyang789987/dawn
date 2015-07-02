@@ -56,7 +56,7 @@ public class TestQRpcClientChannel extends QRpcClientChannel {
 				final TestQRpcClientChannel client = new TestQRpcClientChannel(
 						"127.0.0.1", 10000, true);
 				final long N = 100000000;
-				int T = 1000;
+				int T = 10000;
 
 				for (int n = 0; n < T; n++) {
 					new Task() {

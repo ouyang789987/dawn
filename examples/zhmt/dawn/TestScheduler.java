@@ -21,7 +21,7 @@ public class TestScheduler extends Task {
 		new Task(){
 			public void execute() throws Pausable ,Exception {
 				
-				for (int i = 0; i < 6000; i++) {
+				for (int i = 0; i < 200000; i++) {
 					TestScheduler s = new TestScheduler();
 					s.start();
 				}
