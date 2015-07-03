@@ -81,6 +81,7 @@ public class CycleArrayQueue<T> {
 
 		size--;
 		T ret = (T) sink[head];
+		sink[head] = null;
 		head = nextHead();
 		if (overflow) {
 			T tmp = ultraQ.removeFirst();

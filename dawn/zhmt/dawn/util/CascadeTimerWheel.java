@@ -1,10 +1,9 @@
-package zhmt.dawn;
+package zhmt.dawn.util;
 
 import java.util.ArrayList;
 import java.util.Collections;
 
-import zhmt.dawn.util.CycleArrayQueue;
-import zhmt.dawn.util.SimpleLinkedList;
+import zhmt.dawn.TimerExe;
 
 /**
  * 级联时间轮定时器
@@ -108,17 +107,17 @@ public class CascadeTimerWheel<E extends TimerExe> {
 	}
 
 	private class Wheel {
-		ArrayList<CycleArrayQueue<E>> ticks;
+		ArrayList<LinkedArrayList<E>> ticks;
 		Wheel parent;
 		private int curTick;
 		long min;//include
 		long max;//exclude
 
 		public Wheel(int tickNum, Wheel parent) {
-			ticks = new ArrayList<CycleArrayQueue<E>>(tickNum);
+			ticks = new ArrayList<LinkedArrayList<E>>(tickNum);
 			this.parent = parent;
 			for (int i = 0; i < tickNum; i++) {
-				ticks.add(new CycleArrayQueue<E>(50000));
+				ticks.add(new LinkedArrayList<E>());
 			}
 		}
 
@@ -128,7 +127,7 @@ public class CascadeTimerWheel<E extends TimerExe> {
 				curTick = 0;
 				if (parent != null) {
 					parent.tick();
-					CycleArrayQueue<E> parentTick = parent.ticks
+					LinkedArrayList<E> parentTick = parent.ticks
 							.get(parent.curTick);
 
 					E e = null;

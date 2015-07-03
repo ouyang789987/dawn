@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 
-import zhmt.dawn.CascadeTimerWheel;
+import zhmt.dawn.util.CascadeTimerWheel;
 import zhmt.dawn.util.TlsInstance;
 import kilim.Pausable;
 import kilim.Scheduler;
