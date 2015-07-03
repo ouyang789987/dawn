@@ -25,6 +25,10 @@ kilim _at_ malhar.net
 dawn v0.0.1
 ======================================================================
 
+系列教程
+
+http://blog.csdn.net/zhmt/article
+
 Code with nio in simplest way:
 
 如何运行本工程以及例子：
