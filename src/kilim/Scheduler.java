@@ -42,16 +42,16 @@ public class Scheduler {
 	 * scheduled when it is runnable.
 	 */
 	public void schedule(Task t) {
-		if (tls.get() == null)
+		Scheduler sch = tls.get();
+		if (sch == null || sch != this)
 			outsideTasks.add(t);
 		else
 			runnableTasks.add(t);
-		//		assert t.running == true : "Task " + t
-		//				+ " scheduled even though running is false";
 	}
 
 	public void schedule(NonpausableTask t) {
-		if (tls.get() == null)
+		Scheduler sch = tls.get();
+		if (sch == null || sch != this)
 			outsideTasks.add(t);
 		else
 			runnableTasks.add(t);
