@@ -1,3 +1,6 @@
+Dont use me again,you have better choice: quasar。They are similar , and quasar is proven.
+======================================================================
+
 Kilim v1.0
 Copyright (c) 2006 Sriram Srinivasan.
 (kilim _at_ malhar.net)
